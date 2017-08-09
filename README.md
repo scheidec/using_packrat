@@ -1,0 +1,1 @@
+This is a slide presentation about using packrat for dependency management in R.
