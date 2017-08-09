@@ -79,6 +79,8 @@ knitr::opts_chunk$set(echo = TRUE)
 - Two key components: 
     - Snapshot of your project's R dependencies
     - The private packrat library powering your project
+
+&nbsp;
   
 - Two key verbs for interacting with these components:
     - `packrat::snapshot()`
@@ -90,32 +92,72 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Overview
 
-![](packrat-overview.png)
+![](img/packrat-overview.png)
 
+## `packrat::init()`
 
+- sets up packrat in an existing project
+
+![](img/packrat-init.png)
+
+&nbsp;
+
+- Note: once you have made the project a packrat project, you will need to install all needed packages, even if they are installed on your global library
+
+## `packrat::status()`
+
+- Shows the differences between the project's packrat dependencies, its private package library, and its R scripts
+
+- Example: You have `dplyr` installed and loaded into your packrat library and you are using functions from `dplyr` in your project:
+
+![](img/packrat-status.png)
 
 ## `packrat::snapshot()`
 
-- Automatic snapshots option will record package upgrades and additions in the background
+- updates the `packrat.lock` file, which lists the precise package versions that were used to satisfy dependencies the project currently has.
+    - Note: the `packrat.lock` file should never be edited by hand!
 
+&nbsp;
+
+- Continuing our example, say we actually wanted to remove `dplyr` from our packrat library, we can use `packrat::snapshot()` to remove this package from our lockfile:
+
+![](img/packrat-snapshot.png)
+
+&nbsp;
+
+- Note: Automatic snapshots option will record package upgrades and additions in the background
+    - These are on by default, but you can turn off using `packrat::set_opts(auto.snapshot = FALSE)
 
 ## `packrat::restore()`
 
-- Applies the most recent snapshot to the project's private library
-- works by adding, removing, and changing packages so that the set of installed packages and their versions matches the snapshot exactly
+- Applies the most recent snapshot to the project's private library (pulling from the `packrat.lock` file)
+- works by adding, removing, and changing packages so that the set of installed packages and their versions on the current local private packrat library matches the snapshot exactly
 
 - Three common use cases for `packrat::restore()`:
     - Hydrate - use `restore()` after copying a project to a new machine to populate the library on that machine
     - Sync - Use `restore()` to apply library changes made by a collaborator to your own library (In general, you want to run `restore()` whenever you pick up a change to `packrat.lock`)
     - Rollback - use `restore()` to undo accidental changes 
 
+## `packrat::restore()`
+
+- After removing `dplyr` from our library, what if we wanted to get it back and written in our lockfile?  We would use `packrat::restore()`:
+
+![](img/packrat-restore.png)
+
+
 ## `packrat::clean()`
 
 - Removes packages from the library that are installed but not needed for your project
-      
-## `packrat::status()`
 
-- Shows the differences between the project's packrat dependencies, its private package library, and its R scripts
+&nbsp;
+
+- Example: We installed a package called `pscl` and do not end up using it anywhere in the project.  To remove it from the packrat library, use `packrat::clean()`:
+
+![](img/packrat-clean.png)
+
+&nbsp;
+
+- Remember: package removes aren't auto-snapshotted, so save your changes to packrat.lock using `packrat::snapshot()` after you are finished cleaning your library
 
 
 ## Moving in and out of packrat mode
@@ -127,35 +169,78 @@ knitr::opts_chunk$set(echo = TRUE)
     - Gets back into packrat mode
   
   
-## Miscellaneous
+## Other things to know
 
 - All base R packages are already installed and versioned in the private packrat library when you set up packrat in your project
     - in `lib-R` directory
-    - All loaded packages go into the `lib` directory
+    - All loaded packages go into the `lib` and `src` directory
+
+- You can view your packrat options with `packrat::get_opts()` and change them with `packrat::set_opts()`
   
-- Use `packrat::init()` to set up packrat in an existing project
-    
+&nbsp;  
+  
+- Packrat file structure:
+
+![](img/packrat-files.png)
     
 # Using `packrat` in our repositories
 
-## Packrat with RStudio Projects
+## `packrat` with RStudio Projects
 
-- One `.Rproj` in top level directory, or multiple nested `.Rproj`'s in each subdirectory?
+- One `.Rproj` in top level directory, or multiple nested `.Rproj`'s in each subdirectory with real code in it?
     - There are pros and cons to each
+        - One `.Rproj`
+            - Pros:
+            - Cons:
+        
+        - Multiple nested `.Rproj`'s
+            - Pros:
+            - Cons:
     
+## Inheriting `packrat` in subdirectories/subprojects
+
+- Is this a good idea?
+
+## Issues
+
+- `formatR` package being removed from `packrat::clean()` but needing to be reinstalled every time you knit
+
+- `packrat::clean(dry.run = TRUE) returns things invisibly, when there are actually packages that need to be cleaned up
 
 # How to hand off a `packrat` project to a client
 
-## Collaboration with packrat
+## Collaboration with `packrat`
 
-- `packrat::bundle()`
-    - Bundles the entire project into a gzipped tarball (`.tar.gz`) file to share with collaborators/clients
+- Once a project is ready to be shared with a collaborator or client, it can be "bundled" up using the `packrat::bundle()` function.
+
+- This "bundled" project can then be shared and opened on a client's machine, with all the the packages and dependencies automatically installed when they open the `.Rproj` file or run the `packrat::unbundle()` function.
+
+## `packrat::bundle()`
+
+- Bundles the entire project into a gzipped tarball (`.tar.gz`) file to share with collaborators/clients
+
+![](img/packrat-bundle.png)
+
+&nbsp;
+
+- You can then send this zipped file to the client, and if they have R/RStudio installed they can access it.
   
-- `packrat::unbundle()`
-    - Unbundles the `.tar.gz` file into a new directory on the collaborator/client's machine in the exact same version as the project was bundled, with the same versions of packages and dependencies installed
-    - This automatically happens when the collaborator unzips/opens the `.tar.gz` file and opens the `.Rproj` file on their machine for the first time
+## `packrat::unbundle()`
+
+- Unbundles the `.tar.gz` file into a new directory on the collaborator/client's machine in the exact same version as the project was bundled, with the same versions of packages and dependencies installed
+    
+- This automatically happens when the collaborator unzips/opens the `.tar.gz` file and opens the `.Rproj` file on their machine for the first time
+
+![](img/packrat-unbundle1.png)
+![](img/packrat-unbundle2.png)
 
 ## References
+
+- Packrat Documentation:
+
+    - https://rstudio.github.io/packrat/
+    
+&nbsp;    
 
 - Kevin Ushey's RStudio webinar: 
 
