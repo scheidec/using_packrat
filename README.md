@@ -1,1 +1,1 @@
-This is a slide presentation about using packrat for dependency management in R.
+This is an HTML presentation about using packrat for dependency management in R.
