@@ -183,6 +183,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ![](img/packrat-files.png)
 
+## Best practices
+
+- Install packages on-the-fly while working
+
+- When you are ready to push a commit and merge your branch, use `packrat::snapshot()` and `packrat::clean()` to solidify dependencies
+    
+
 # How to hand off a `packrat` project to a client
 
 ## Collaboration with `packrat`
@@ -194,6 +201,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ## `packrat::bundle()`
 
 - Bundles the entire project into a gzipped tarball (`.tar.gz`) file to share with collaborators/clients
+    - There are options to include the `src` and `lib` directories:
+        - `packrat::bundle(include.src = FALSE, include.lib = FALSE)`
+    - Currently, not aware of a way to exclude a certain subdirectory or `.Rmd` file
 
 ![](img/packrat-bundle.png)
 
@@ -215,25 +225,39 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## `packrat` with RStudio Projects
 
-- One `.Rproj` in top level directory, or multiple nested `.Rproj`'s in each subdirectory with real code in it?
-    - One Repo, One `.Rproj`, One Packrat
-        - Pros: 
-            - You don't have to have a separate `.Rprofile` in each subdirectory to point to higher level packrat directory
-            - RStudio is aware of packrat when you are working in any subdirectory
-        - Cons: 
-            - Have to remember to set working directory to where you are currently working (usually not the top level)
+- There are three ways we have considered using packrat in our repositories:
 
-##  `packrat` with RStudio Projects
-- One `.Rproj` in top level directory, or multiple nested `.Rproj`'s in each subdirectory with real code in it?
-    - Multiple nested `.Rproj`'s and packrat in every subdirectory (with real code in it)
-        - Pros: 
-            - workflow "makes sense", one `.Rproj` for every subdirectory you work in to keep smaller not closely related projects separated
-            - only need to keep the `packrat.lock` file as a record of dependencies should generally work
-        - Cons: 
-            - RStudio does not know you are "inheriting" packrat
-            - currently unable to figure out how to get the sub-project to use the higher-level packrat directory properly, even when using `source("../.Rprofile", chdir = TRUE)`
-            - lose access to the RStudio integrations in the Packages view
-            - would have to set the `src/` to get git ignored so we don't explode our repos in size
+    1. One Repo, One `.Rproj` in top level directory, one top-level packrat folder
+    2. Multiple nested `.Rproj`'s in eachsubirectory but one top-level packrat folder
+    3. Multiple nested `.Rproj`'s in each subdirectory and packrat in each subdirectory (with real code in it)
+
+## One Repo, One `.Rproj`, One Packrat
+
+- Pros: 
+    - You don't have to have a separate `.Rprofile` in each subdirectory to point to higher level packrat directory
+    - RStudio is aware of packrat when you are working in any subdirectory
+- Cons: 
+    - Have to remember to set working directory to where you are currently working (usually not the top level)
+
+## Multiple nested `.Rproj`'s but one top-level packrat
+
+- Pros:
+    - workflow "makes sense", one `.Rproj` for every subdirectory you work in to keep smaller not closely related projects separated
+    - only need to keep the `packrat.lock` file as a record of dependencies should generally work
+- Cons:
+    - RStudio does not know you are "inheriting" packrat
+    - currently unable to figure out how to get the sub-project to use the higher-level packrat directory properly, even when using `source("../.Rprofile", chdir = TRUE)`
+    - lose access to the RStudio integrations in the Packages view
+
+## Multiple nested `.Rproj`'s, where each has it's own packrat
+
+- Pros: 
+    - workflow "makes sense", one `.Rproj` for every subdirectory you work in to keep smaller not closely related projects separated
+    - only need to keep the `packrat.lock` file as a record of dependencies should generally work
+    - Since each `.Rproj` has its own packrat, you can bundle up just one subdirectory, i.e. "final client report", instead of the entire directory to send to client
+- Cons: 
+    - would have to set the `src/` to get git ignored so we don't explode our repos in size
+    - everytime someone makes a new subdirectory, they have to make sure to set up packrat again
 
 ## Other Issues
 
@@ -249,6 +273,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 - using packrat across multiple different R versions (i.e. 3.4.0 vs 3.4.1) updates `packrat.lock` file with the different version when dependencies change
     - So far, hasn't caused any _real_ issues, other than some "x was built under R 3.4.0" warnings, but something to keep an eye on in the future
+    
 
 ## What should we `.gitignore`?
 
@@ -257,17 +282,27 @@ knitr::opts_chunk$set(echo = TRUE)
         - Pros:
             - it's nice to have all of the sources bundled up in the repo
                 - might have advantages for building containers for packrat-enabled projects (but we're not there quite yet)
-            - increases speed of install
+            - potentially increases speed of install?
         - Cons:
             - Massively increases the size of our repos
-        
+            - can get noisy MR's because someone may have edited one file, but brought in 4 new dependencies, so you get another file changed for each
+            - forces everyone to install from source rather than pulling from binaries where able
+
+
+## What should we `.gitignore`?
+
+- Should we keep `src/` bundled with our projects or `.gitignore` it?
     - `.gitignore`?
         - Pros:
             - Decreases the size of our repos
         - Cons:
-            - decreases speed of install
-            - forces everyone to install from source rather than pulling from binaries where able
+            - private packages we develop could be tricky to work with (could probably force-add the source just for those ones)
+            - possible something could be removed from CRAN/Github and you can't download it later
+            - potentially decreases speed of download/install
 
+&nbsp;
+            
+- Note: use `packrat::set_opts(vcs.ignore.src = TRUE)` to add `src/` to `.gitignore`
 
 
 ## References
