@@ -126,7 +126,7 @@ knitr::opts_chunk$set(echo = TRUE)
 &nbsp;
 
 - Note: Automatic snapshots option will record package upgrades and additions in the background
-    - These are on by default, but you can turn off using `packrat::set_opts(auto.snapshot = FALSE)
+    - These are on by default, but you can turn off using `packrat::set_opts(auto.snapshot = FALSE)`
 
 ## `packrat::restore()`
 
@@ -182,30 +182,6 @@ knitr::opts_chunk$set(echo = TRUE)
 - Packrat file structure:
 
 ![](img/packrat-files.png)
-    
-# Using `packrat` in our repositories
-
-## `packrat` with RStudio Projects
-
-- One `.Rproj` in top level directory, or multiple nested `.Rproj`'s in each subdirectory with real code in it?
-    - There are pros and cons to each
-        - One `.Rproj`
-            - Pros:
-            - Cons:
-        
-        - Multiple nested `.Rproj`'s
-            - Pros:
-            - Cons:
-    
-## Inheriting `packrat` in subdirectories/subprojects
-
-- Is this a good idea?
-
-## Issues
-
-- `formatR` package being removed from `packrat::clean()` but needing to be reinstalled every time you knit
-
-- `packrat::clean(dry.run = TRUE) returns things invisibly, when there are actually packages that need to be cleaned up
 
 # How to hand off a `packrat` project to a client
 
@@ -233,6 +209,66 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ![](img/packrat-unbundle1.png)
 ![](img/packrat-unbundle2.png)
+
+    
+# Using `packrat` in our repositories
+
+## `packrat` with RStudio Projects
+
+- One `.Rproj` in top level directory, or multiple nested `.Rproj`'s in each subdirectory with real code in it?
+    - One Repo, One `.Rproj`, One Packrat
+        - Pros: 
+            - You don't have to have a separate `.Rprofile` in each subdirectory to point to higher level packrat directory
+            - RStudio is aware of packrat when you are working in any subdirectory
+        - Cons: 
+            - Have to remember to set working directory to where you are currently working (usually not the top level)
+
+##  `packrat` with RStudio Projects
+- One `.Rproj` in top level directory, or multiple nested `.Rproj`'s in each subdirectory with real code in it?
+    - Multiple nested `.Rproj`'s and packrat in every subdirectory (with real code in it)
+        - Pros: 
+            - workflow "makes sense", one `.Rproj` for every subdirectory you work in to keep smaller not closely related projects separated
+            - only need to keep the `packrat.lock` file as a record of dependencies should generally work
+        - Cons: 
+            - RStudio does not know you are "inheriting" packrat
+            - currently unable to figure out how to get the sub-project to use the higher-level packrat directory properly, even when using `source("../.Rprofile", chdir = TRUE)`
+            - lose access to the RStudio integrations in the Packages view
+            - would have to set the `src/` to get git ignored so we don't explode our repos in size
+
+## Other Issues
+
+- `formatR` package being removed from `packrat::clean()` but needing to be reinstalled every time you knit
+    - This is an issue with RStudio: https://github.com/rstudio/packrat/issues/354, it doesn't see formatR as a true dependency, because none of the `library` calls in the project depend on `formatR`
+    - one potential workaround is listing this as an "External package", with `packrat::set_opts(external.packages = c("formatR"))`
+
+&nbsp;
+
+- `packrat::clean(dry.run = TRUE)` returns things invisibly, when there are actually packages that need to be cleaned up
+
+&nbsp;
+
+- using packrat across multiple different R versions (i.e. 3.4.0 vs 3.4.1) updates `packrat.lock` file with the different version when dependencies change
+    - So far, hasn't caused any _real_ issues, other than some "x was built under R 3.4.0" warnings, but something to keep an eye on in the future
+
+## What should we `.gitignore`?
+
+- Should we keep `src/` bundled with our projects or `.gitignore` it?
+    - Keep?
+        - Pros:
+            - it's nice to have all of the sources bundled up in the repo
+                - might have advantages for building containers for packrat-enabled projects (but we're not there quite yet)
+            - increases speed of install
+        - Cons:
+            - Massively increases the size of our repos
+        
+    - `.gitignore`?
+        - Pros:
+            - Decreases the size of our repos
+        - Cons:
+            - decreases speed of install
+            - forces everyone to install from source rather than pulling from binaries where able
+
+
 
 ## References
 
